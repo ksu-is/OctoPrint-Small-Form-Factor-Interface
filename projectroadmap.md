@@ -10,7 +10,7 @@ A small form factor touchscreen interface for 3D printers, enabling users to mor
 
 ### Sprint 2
 1. Assess viability of Flask server connected to OctoPrint running on Ubuntu Frame
-2. ~~Initial view-only functionality of interface (working through quirks of OctoPrint API, Flask routes, and Jinja templating)~~
+2. ~~Initial view-only functionality of interface (working through quirks of OctoPrint API, Flask routes, and Jinja templating)~~ (see "Screenshot from 2022-11-23 19-36-39.png")
 3. Initial test of job commands to printer (with a jupyter notebook)
 
 ### Sprint 3
