@@ -1,10 +1,7 @@
-from math import floor
 import requests 
 import json
 import os
-import time
 from flask import Flask, render_template, request, url_for, redirect
-import concurrent.futures as cf
 import datetime as dt
 from htmlbits import Buttons, Views
 from datamodels import DataModels
@@ -13,7 +10,7 @@ app=Flask(__name__)
 
 activity_state_1 = ["Offline"]
 activity_state_2 = ["Inactive"]
-activity_state_3 = ["Printing", "Operational", "Paused"]
+activity_state_3 = ["Starting", "Printing", "Operational", "Paused"]
 activity_state_4 = ["Complete", "Stopped"]
 
 endpoint = "127.0.0.1:5000"
@@ -184,11 +181,11 @@ class printer_connection():
             if job_data != data_models.job_data():
                 if job_data['job_progress'] is not None:
                     if job_data['job_state'] != 'Paused':
-                        if job_data['job_progress'] <= 0.5 and job_data['job_state'] != 'Paused':
+                        if job_data['job_progress'] <= 0.5:
                             return "Starting"
-                        elif job_data['job_progress'] > 0.5 and job_data['job_progress'] < 100 and job_data['job_state'] != 'Paused':
+                        elif job_data['job_progress'] > 0.5 and job_data['job_progress'] < 100:
                             return "Printing"
-                        elif job_data['job_progress'] == 100 and job_data['job_state'] != 'Paused':
+                        elif job_data['job_progress'] == 100:
                             return "Complete"
                     else:
                         return "Paused"
@@ -270,9 +267,6 @@ class component_sort():
             menu_lower = "" #11-23-22: remain empty, devoid of light
         return menu_lower
 
-endpoint = "127.0.0.1:5000"
-X_Api_Key = "60F9D39D7BED47E793A89BA01156B141"
-
 @app.route('/octoprint/display', methods=['GET', 'POST'])
 def display_final():
     #process_duration_init = time.process_time()
@@ -289,10 +283,10 @@ def display_final():
     status_display_upper_data = components.status_display_upper(printer_status=printer_status)
     menu_context_upper_data = components.menu_context_upper(printer_status=printer_status)
     status_display_lower_data = components.status_display_lower(printer_status=printer_status, 
-                                                    ext_temp_actual= ext_data["ext_temp_actual"],
-                                                    ext_temp_target= ext_data["ext_temp_target"],
-                                                    ext_temp_status= ext_data["ext_temp_status"],
-                                                    ext_temp_state= ext_data["ext_temp_state"],
+                                                    ext_temp_actual=ext_data["ext_temp_actual"],
+                                                    ext_temp_target=ext_data["ext_temp_target"],
+                                                    ext_temp_status=ext_data["ext_temp_status"],
+                                                    ext_temp_state=ext_data["ext_temp_state"],
                                                     bed_temp_actual=bed_data["bed_temp_actual"],
                                                     bed_temp_target=bed_data["bed_temp_target"],
                                                     bed_temp_status=bed_data["bed_temp_status"],
