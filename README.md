@@ -4,13 +4,13 @@ A small form factor touchscreen interface for 3D printers, enabling users to mor
 ## Sprints
 
 ### Sprint 1 (11/10/2022; <em>as submitted, 11/15/2022</em>)
-1. Develop a project topic
-2. Create a project README
-3. Establish a project timeline
+1. ~~Develop a project topic~~
+2. ~~Create a project README~~
+3. ~~Establish a project timeline~~
 
 ### Sprint 2
 1. Assess viability of Flask server connected to OctoPrint running on Ubuntu Frame
-2. Initial view-only functionality of interface (working through quirks of OctoPrint API, Flask routes, and Jinja templating)
+2. ~~Initial view-only functionality of interface (working through quirks of OctoPrint API, Flask routes, and Jinja templating)~~
 3. Initial test of job commands to printer (with a jupyter notebook)
 
 ### Sprint 3
