@@ -21,3 +21,4 @@ class DataModels:
             'job_progress': '',
             'job_state': ''
         }
+

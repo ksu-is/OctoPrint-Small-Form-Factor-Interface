@@ -14,7 +14,7 @@ activity_state_3 = ["Starting", "Printing", "Operational", "Paused"]
 activity_state_4 = ["Complete", "Stopped"]
 
 endpoint = "127.0.0.1:5000"
-X_Api_Key = "60F9D39D7BED47E793A89BA01156B141" #only works for local instance
+X_Api_Key = "593425E324D842BCB2938C7D8E583B76" #only works for local instance
 
 class printer_connection():
     def __init__(self, endpoint, X_Api_Key):
@@ -181,30 +181,40 @@ class printer_connection():
             if job_data != data_models.job_data():
                 if job_data['job_progress'] is not None:
                     if job_data['job_state'] != 'Paused':
-                        if job_data['job_progress'] <= 0.5:
+                        if job_data['job_progress'] <= 0.1:
                             return "Starting"
-                        elif job_data['job_progress'] > 0.5 and job_data['job_progress'] < 100:
+                        elif job_data['job_progress'] > 0.1 and job_data['job_progress'] < 100:
                             return "Printing"
                         elif job_data['job_progress'] == 100:
                             return "Complete"
                     else:
                         return "Paused"
-                else:
+                elif bed_data["bed_temp_actual"] >= 30:
                     return "Stopped"
+                else:
+                    return "Inactive"
             else:
                 return "Inactive"
         else:
             return "Offline"
 
 class component_sort():
-    def status_display_upper(self, printer_status):
+    def status_display_upper(self, printer_status, job_progress):
         status_upper = ""
+        status_upper_title = ""
+        status_upper_progress = ""
+        status_upper_time = ""
         views = Views
+        buttons = Buttons
         
         if printer_status in activity_state_1 or printer_status in activity_state_2:
-            status_upper = views.status_display_upper_emphasis(printer_status)
+            status_upper_title = views.status_display_upper_title_emphasis(printer_status)
         elif printer_status in activity_state_3 or printer_status in activity_state_4:
-            status_upper = views.status_display_upper(printer_status)
+            status_upper_title = views.status_display_upper_title(printer_status=printer_status)
+            status_upper_progress = views.status_display_upper_progress(job_progress=job_progress)
+            status_upper_time = ""
+
+        status_upper = status_upper_title + status_upper_progress + status_upper_time
         return status_upper
 
     def menu_context_upper(self, printer_status):
@@ -267,7 +277,7 @@ class component_sort():
             menu_lower = "" #11-23-22: remain empty, devoid of light
         return menu_lower
 
-@app.route('/octoprint/display', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def display_final():
     #process_duration_init = time.process_time()
     #timed_operations(floor(process_duration_init))
@@ -275,12 +285,14 @@ def display_final():
     ext_data = printer.ext_data() 
     bed_data = printer.bed_data()
     job_data = printer.job_data()
+    print(job_data)
     printer_status = printer.printer_status(ext_data=ext_data, 
                                             bed_data=bed_data,
                                             job_data=job_data)
 
     components = component_sort()
-    status_display_upper_data = components.status_display_upper(printer_status=printer_status)
+    status_display_upper_data = components.status_display_upper(printer_status=printer_status, 
+                                                    job_progress=job_data["job_progress"])
     menu_context_upper_data = components.menu_context_upper(printer_status=printer_status)
     status_display_lower_data = components.status_display_lower(printer_status=printer_status, 
                                                     ext_temp_actual=ext_data["ext_temp_actual"],
