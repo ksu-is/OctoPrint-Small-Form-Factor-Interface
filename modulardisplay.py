@@ -13,14 +13,58 @@ activity_state_2 = ["Inactive"]
 activity_state_3 = ["Starting", "Printing", "Operational", "Paused"]
 activity_state_4 = ["Complete", "Stopped"]
 
+
+
 endpoint = "127.0.0.1:5000"
-X_Api_Key = "593425E324D842BCB2938C7D8E583B76" #only works for local instance
+X_Api_Key = "60F9D39D7BED47E793A89BA01156B141" #only works for local instance
 
 class printer_connection():
     def __init__(self, endpoint, X_Api_Key):
         self._endpoint = endpoint
         self._X_Api_Key = X_Api_Key
         os.environ["NO_PROXY"] = "127.0.0.1"
+        
+    def printer_btn_post(self, btn_input):
+        btn_input = btn_input
+        btn_region = btn_input['btn_region']
+        btn_action = btn_input['btn_action']
+        printer_btn_post_request = ''
+        printer_btn_post_dict = {}
+        operation = ''
+        command = ""
+        action = ""
+        
+        if btn_region == 'upper':
+            if btn_action == 'play' or btn_action == "pause":
+                operation = '/api/job'
+                command = "pause"
+                action = "toggle"
+            elif btn_action == 'stop':
+                operation = '/api/job'
+                command = "cancel"
+            elif btn_action == 'connect':
+                operation = '/api/connection'
+        elif btn_region == 'lower':
+            pass
+        else:
+            pass
+        
+        if command != '' and action != '':
+            printer_btn_post_dict = {
+                "command": command,
+                "action": action
+            }
+        elif command != '' and action == '':
+            printer_btn_post_dict = {
+                "command": command
+            }
+        else:
+            pass
+        
+        printer_btn_post_json_prep = json.dumps(printer_btn_post_dict, indent=4)
+        printer_btn_post_json = json.loads(printer_btn_post_json_prep)
+        printer_btn_post_request = requests.post(f"http://{self._endpoint}/api/job", json=printer_btn_post_json, headers={'X-Api-Key': X_Api_Key})
+        print(printer_btn_post_json)
         
     def printer_ext_get(self):
         try:
@@ -181,44 +225,37 @@ class printer_connection():
             if job_data != data_models.job_data():
                 if job_data['job_progress'] is not None:
                     if job_data['job_state'] != 'Paused':
-                        if job_data['job_progress'] <= 0.1:
+                        if job_data['job_progress'] <= 0.5:
                             return "Starting"
-                        elif job_data['job_progress'] > 0.1 and job_data['job_progress'] < 100:
+                        elif job_data['job_progress'] > 0.5 and job_data['job_progress'] < 100:
                             return "Printing"
                         elif job_data['job_progress'] == 100:
                             return "Complete"
                     else:
                         return "Paused"
-                elif bed_data["bed_temp_actual"] >= 30:
-                    return "Stopped"
-                else:
+                elif ext_data['ext_temp_actual'] <= 25 or bed_data['bed_temp_actual'] <= 25:
                     return "Inactive"
+                else:
+                    return "Stopped"
             else:
                 return "Inactive"
         else:
             return "Offline"
 
 class component_sort():
-    def status_display_upper(self, printer_status, job_progress):
+    def status_display_upper(self, printer_status):
         status_upper = ""
-        status_upper_title = ""
-        status_upper_progress = ""
-        status_upper_time = ""
         views = Views
-        buttons = Buttons
         
         if printer_status in activity_state_1 or printer_status in activity_state_2:
-            status_upper_title = views.status_display_upper_title_emphasis(printer_status)
+            status_upper = views.status_display_upper_emphasis(printer_status)
         elif printer_status in activity_state_3 or printer_status in activity_state_4:
-            status_upper_title = views.status_display_upper_title(printer_status=printer_status)
-            status_upper_progress = views.status_display_upper_progress(job_progress=job_progress)
-            status_upper_time = ""
-
-        status_upper = status_upper_title + status_upper_progress + status_upper_time
+            status_upper = views.status_display_upper(printer_status)
         return status_upper
 
     def menu_context_upper(self, printer_status):
         menu_upper = ""
+        printer_status=printer_status
         buttons = Buttons
 
         if printer_status in activity_state_1:
@@ -226,7 +263,7 @@ class component_sort():
         elif printer_status in activity_state_2 or printer_status in activity_state_4:
             menu_upper = buttons.bed_clear() #10-22-22: change to bed clear toggle
         elif printer_status in activity_state_3:
-            menu_upper = buttons.job_operations() #10-22-22: change to job operations shortcuts    
+            menu_upper = buttons.job_operations(printer_status=printer_status) #10-22-22: change to job operations shortcuts    
         return menu_upper
 
     def status_display_lower(self, printer_status, 
@@ -277,7 +314,7 @@ class component_sort():
             menu_lower = "" #11-23-22: remain empty, devoid of light
         return menu_lower
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/display', methods=['GET'])
 def display_final():
     #process_duration_init = time.process_time()
     #timed_operations(floor(process_duration_init))
@@ -285,14 +322,12 @@ def display_final():
     ext_data = printer.ext_data() 
     bed_data = printer.bed_data()
     job_data = printer.job_data()
-    print(job_data)
     printer_status = printer.printer_status(ext_data=ext_data, 
                                             bed_data=bed_data,
                                             job_data=job_data)
 
     components = component_sort()
-    status_display_upper_data = components.status_display_upper(printer_status=printer_status, 
-                                                    job_progress=job_data["job_progress"])
+    status_display_upper_data = components.status_display_upper(printer_status=printer_status)
     menu_context_upper_data = components.menu_context_upper(printer_status=printer_status)
     status_display_lower_data = components.status_display_lower(printer_status=printer_status, 
                                                     ext_temp_actual=ext_data["ext_temp_actual"],
@@ -311,9 +346,25 @@ def display_final():
                            status_display_lower=status_display_lower_data,
                            menu_context_lower=menu_context_lower_data)
 
-@app.route('/octoprint/<button_region>/<button_id>', methods=['GET'])
+@app.route('/action', methods=['GET']) #/action?printerstatus={printer_status}&btnregion={btn_region}&btnaction={btn_action}
 def button_action():
-    return redirect("http://127.0.0.1:5002/octoprint/display")
+    printer = printer_connection(endpoint=endpoint, X_Api_Key=X_Api_Key)
+    data_models = DataModels
+    btn_input = data_models.btn_input()
+    printer_status = str(request.args.get('printerstatus'))
+    btn_region = str(request.args.get('btnregion'))
+    btn_action = str(request.args.get('btnaction'))
+    print(btn_input)
+    
+    if printer_status != None or btn_region != None or btn_action != None:
+        btn_input['printer_status'] = printer_status
+        btn_input['btn_region'] = btn_region
+        btn_input['btn_action'] = btn_action
+        printer.printer_btn_post(btn_input=btn_input)
+    else:
+        pass
+        
+    return redirect("http://127.0.0.1:5002/display")
 
 if __name__ == "__main__":
     app.run(host='127.0.0.1', port=5002, debug=True)
