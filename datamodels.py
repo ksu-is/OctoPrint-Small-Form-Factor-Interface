@@ -21,4 +21,12 @@ class DataModels:
             'job_progress': '',
             'job_state': ''
         }
+        
+    def btn_input():
+        return {
+            'printer_status': '',
+            'btn_region': '',
+            'btn_action': ''
+        }
+        
 
