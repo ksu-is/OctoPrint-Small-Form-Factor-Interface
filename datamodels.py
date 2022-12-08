@@ -29,4 +29,11 @@ class DataModels:
             'btn_action': ''
         }
         
+    def btn_output():
+        return {
+            'operation': '',
+            'command': '',
+            'action': ''
+        }
+        
 
