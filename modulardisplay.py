@@ -4,9 +4,10 @@ import os
 from math import floor
 from flask import Flask, render_template, request, url_for, redirect
 import datetime as dt
-from htmlbits import Buttons, Views
-from datamodels import DataModels
-from iconsbits import Bootstrap_SVG_Icons
+
+from static.DynamicComponents.htmlbits import Buttons, Views
+from static.DynamicComponents.iconsbits import Bootstrap_SVG_Icons
+from static.Configuration.OctoprintDataModels import DataModels
 
 app=Flask(__name__)
 
